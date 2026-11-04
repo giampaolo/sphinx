@@ -311,6 +311,15 @@ class IndexBuilder:
             # it's directly a class (e.g. added by app.add_search_language)
             self.lang = lang_class(options)
 
+        _stem = self.lang.stem
+
+        # memoise self.lang.stem across documents
+        @functools.cache
+        def stem(word_to_stem: str) -> str:
+            return _stem(word_to_stem).lower()
+
+        self._stem = stem
+
         if scoring:
             with open(scoring, 'rb') as fp:
                 self.js_scorer_code = fp.read().decode()
@@ -498,12 +507,7 @@ class IndexBuilder:
         word_store = self._word_collector(doctree)
 
         _filter = self.lang.word_filter
-        _stem = self.lang.stem
-
-        # memoise self.lang.stem
-        @functools.cache
-        def stem(word_to_stem: str) -> str:
-            return _stem(word_to_stem).lower()
+        stem = self._stem
 
         self._all_titles[docname] = word_store.titles
 
